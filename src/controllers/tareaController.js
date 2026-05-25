@@ -1,6 +1,11 @@
 const Tarea = require('../models/Tarea');
 const Proyecto = require('../models/Proyecto');
 const Usuario = require('../models/Usuario');
+const { crearNotificacion } = require('./notificacionController');
+const ProyectoMiembro = require('../models/ProyectoMiembro');
+
+let io;
+const setIo = (socketIo) => { io = socketIo; };
 
 // CREAR TAREA
 const crearTarea = async (req, res) => {
@@ -14,9 +19,13 @@ const crearTarea = async (req, res) => {
     }
 
     // Solo coordinador del proyecto o admin puede crear tareas
-    if (req.usuario.rol !== 'admin' && proyecto.coordinadorId !== req.usuario.id) {
-      return res.status(403).json({ mensaje: 'No tienes permisos para crear tareas en este proyecto' });
-    }
+   const esMiembroCoordinador = await ProyectoMiembro.findOne({ 
+    where: { proyectoId, usuarioId: req.usuario.id, rol: 'coordinador' } 
+  });
+
+  if (req.usuario.rol !== 'admin' && proyecto.coordinadorId !== req.usuario.id && !esMiembroCoordinador) {
+    return res.status(403).json({ mensaje: 'No tienes permisos para crear tareas en este proyecto' });
+  }
 
     const tarea = await Tarea.create({
       titulo,
@@ -27,21 +36,32 @@ const crearTarea = async (req, res) => {
       proyectoId
     });
 
-    res.status(201).json({ mensaje: 'Tarea creada exitosamente', tarea });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ mensaje: 'Error en el servidor', error: error.message });
-  }
+    // Notificar al responsable
+  await crearNotificacion(io, {
+    titulo: '📋 Nueva tarea asignada',
+    mensaje: `Se te asignó la tarea "${titulo}" en el proyecto`,
+    tipo: 'nueva_tarea',
+    usuarioId: responsableId,
+    proyectoId
+  });
+  res.status(201).json({ mensaje: 'Tarea creada exitosamente', tarea });
+
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ mensaje: 'Error en el servidor', error: error.message });
+    }
 };
 
 // OBTENER TAREAS DE UN PROYECTO
 const obtenerTareas = async (req, res) => {
   try {
     const { proyectoId } = req.params;
+    const Documento = require('../models/Documento');
     const tareas = await Tarea.findAll({
       where: { proyectoId },
       include: [
-        { model: Usuario, as: 'responsable', attributes: ['id', 'nombre', 'email'] }
+        { model: Usuario, as: 'responsable', attributes: ['id', 'nombre', 'email'] },
+        { model: Documento, as: 'documentos', attributes: ['id', 'nombre', 'ruta', 'tipo', 'tamanio'] }
       ]
     });
     res.json(tareas);
@@ -142,6 +162,7 @@ const eliminarTarea = async (req, res) => {
 };
 
 module.exports = {
+  setIo,
   crearTarea,
   obtenerTareas,
   obtenerTarea,

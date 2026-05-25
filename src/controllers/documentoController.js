@@ -5,6 +5,11 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 
+const { notificarMiembros } = require('./notificacionController');
+
+let io;
+const setIo = (socketIo) => { io = socketIo; };
+
 // Configuración de multer para subir archivos
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -54,7 +59,16 @@ const subirDocumento = async (req, res) => {
       autorId: req.usuario.id
     });
 
-    res.status(201).json({ mensaje: 'Documento subido exitosamente', documento });
+   // Notificar a miembros del proyecto
+await notificarMiembros(io, proyectoId, {
+  titulo: '📄 Nuevo documento',
+  mensaje: `Se subió el documento "${nombre}" en el proyecto`,
+  tipo: 'nuevo_documento',
+  excluirUsuarioId: req.usuario.id
+});
+
+res.status(201).json({ mensaje: 'Documento subido exitosamente', documento });
+
   } catch (error) {
     console.error(error);
     res.status(500).json({ mensaje: 'Error en el servidor', error: error.message });
@@ -137,6 +151,7 @@ const eliminarDocumento = async (req, res) => {
 };
 
 module.exports = {
+  setIo,
   upload,
   subirDocumento,
   obtenerDocumentos,

@@ -25,6 +25,8 @@ const conectarDB = async () => {
     const Avance = require('./models/Avance');
     const Documento = require('./models/Documento');
     const Mensaje = require('./models/Mensaje');
+    const ProyectoMiembro = require('./models/ProyectoMiembro');
+    const Notificacion = require('./models/Notificacion');
 
     // Relaciones
     // Usuario - Proyecto
@@ -55,14 +57,33 @@ const conectarDB = async () => {
     Usuario.hasMany(Documento, { foreignKey: 'autorId', as: 'documentosSubidos' });
     Documento.belongsTo(Usuario, { foreignKey: 'autorId', as: 'autor' });
 
+    // Tarea - Documento
+    Tarea.hasMany(Documento, { foreignKey: 'tareaId', as: 'documentos' });
+    Documento.belongsTo(Tarea, { foreignKey: 'tareaId', as: 'tarea' });
+
     // Usuario - Mensaje
     Usuario.hasMany(Mensaje, { foreignKey: 'autorId', as: 'mensajesEnviados' });
     Mensaje.belongsTo(Usuario, { foreignKey: 'autorId', as: 'autor' });
 
+    // Proyecto - Miembros
+    Proyecto.hasMany(ProyectoMiembro, { foreignKey: 'proyectoId', as: 'miembros' });
+    ProyectoMiembro.belongsTo(Proyecto, { foreignKey: 'proyectoId', as: 'proyecto' });
+    Usuario.hasMany(ProyectoMiembro, { foreignKey: 'usuarioId', as: 'proyectosUnidos' });
+    ProyectoMiembro.belongsTo(Usuario, { foreignKey: 'usuarioId', as: 'usuario' });
+
+    // Usuario - Notificaciones
+    Usuario.hasMany(Notificacion, { foreignKey: 'usuarioId', as: 'notificaciones' });
+    Notificacion.belongsTo(Usuario, { foreignKey: 'usuarioId', as: 'usuario' });
+
+    // Proyecto - Notificaciones
+    Proyecto.hasMany(Notificacion, { foreignKey: 'proyectoId', as: 'notificaciones' });
+    Notificacion.belongsTo(Proyecto, { foreignKey: 'proyectoId', as: 'proyecto' });
+
+
     await sequelize.sync({ alter: true });
-    console.log('✅ Tablas sincronizadas');
+    console.log(' Tablas sincronizadas');
   } catch (error) {
-    console.error('❌ Error conectando a la base de datos:', error.message);
+    console.error(' Error conectando a la base de datos:', error.message);
   }
 };
 

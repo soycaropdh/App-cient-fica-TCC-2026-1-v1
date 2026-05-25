@@ -29,6 +29,12 @@ const Documento = sequelize.define('Documento', {
     type: DataTypes.INTEGER,
     defaultValue: 1
   },
+
+tareaId: {
+  type: DataTypes.INTEGER,
+  allowNull: true
+},
+
   proyectoId: {
     type: DataTypes.INTEGER,
     allowNull: false

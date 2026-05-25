@@ -38,4 +38,5 @@ const Tarea = sequelize.define('Tarea', {
   timestamps: true
 });
 
+// Esta relación se define en config.js
 module.exports = Tarea;

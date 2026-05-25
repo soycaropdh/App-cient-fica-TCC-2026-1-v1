@@ -11,6 +11,8 @@ const proyectoRoutes = require('./src/routes/proyectos');
 const tareaRoutes = require('./src/routes/tareas');
 const avanceRoutes = require('./src/routes/avances');
 const documentoRoutes = require('./src/routes/documentos');
+const miembroRoutes = require('./src/routes/miembros');
+const notificacionRoutes = require('./src/routes/notificaciones');
 const setupSocket = require('./src/socket/chat');
 const { conectarDB } = require('./src/config');
 
@@ -26,7 +28,7 @@ const io = socketIo(server, {
 // Middlewares
 app.use(cors());
 app.use(express.json());
-app.use('/uploads', express.static(path.join(__dirname, 'src/uploads')));
+app.use('/src/uploads', express.static(path.join(__dirname, 'src/uploads')));
 
 // Rutas
 app.use('/api/auth', authRoutes);
@@ -34,6 +36,8 @@ app.use('/api/proyectos', proyectoRoutes);
 app.use('/api/tareas', tareaRoutes);
 app.use('/api/avances', avanceRoutes);
 app.use('/api/documentos', documentoRoutes);
+app.use('/api/miembros', miembroRoutes);
+app.use('/api/notificaciones', notificacionRoutes);
 
 // Ruta de prueba
 app.get('/', (req, res) => {
@@ -42,6 +46,16 @@ app.get('/', (req, res) => {
 
 // Socket.io
 setupSocket(io);
+
+// Pasar io a los controllers que lo necesitan
+const { setIo: setIoMiembro } = require('./src/controllers/miembroController');
+setIoMiembro(io);
+
+const { setIo: setIoDocumento } = require('./src/controllers/documentoController');
+setIoDocumento(io);
+
+const { setIo: setIoTarea } = require('./src/controllers/tareaController');
+setIoTarea(io);
 
 const PORT = process.env.PORT || 3000;
 
